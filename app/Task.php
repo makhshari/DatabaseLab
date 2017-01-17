@@ -5,6 +5,12 @@ namespace App;
 use App\User;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * App\Task
+ *
+ * @property-read \App\User $user
+ * @mixin \Eloquent
+ */
 class Task extends Model
 {
     /**

@@ -16,4 +16,8 @@ elixir(function(mix) {
     mix.sass([
         'dashboard.scss'
     ]);
+    mix.sass([
+        'auth.scss'
+    ],'public/css/auth.css');
+
 });

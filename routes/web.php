@@ -14,7 +14,18 @@
 Route::get('/', function () {
 
 
-
-    $tasks=Task::orderBy('created_at','asc')->get() ;
-    return view('dashboard' , ['tasks'=>$tasks]);
+    $tasks = \App\Task::orderBy('created_at', 'asc')->get();
+    return view('dashboard', ['tasks' => $tasks]);
 });
+
+
+
+Route::get('/tasks', 'TaskController@index');
+Route::post('/task', 'TaskController@store');
+
+
+Auth::routes();
+
+Route::get('/logout', 'Auth\LoginController@logout');
+
+
