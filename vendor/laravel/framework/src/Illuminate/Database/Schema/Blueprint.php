@@ -278,7 +278,7 @@ class Blueprint
     /**
      * Indicate that the given foreign key should be dropped.
      *
-     * @param  string|array  $index
+     * @param  string  $index
      * @return \Illuminate\Support\Fluent
      */
     public function dropForeign($index)
@@ -317,16 +317,6 @@ class Blueprint
     }
 
     /**
-     * Indicate that the soft delete column should be dropped.
-     *
-     * @return void
-     */
-    public function dropSoftDeletesTz()
-    {
-        $this->dropSoftDeletes();
-    }
-
-    /**
      * Indicate that the remember token column should be dropped.
      *
      * @return void
@@ -352,12 +342,11 @@ class Blueprint
      *
      * @param  string|array  $columns
      * @param  string  $name
-     * @param  string|null  $algorithm
      * @return \Illuminate\Support\Fluent
      */
-    public function primary($columns, $name = null, $algorithm = null)
+    public function primary($columns, $name = null)
     {
-        return $this->indexCommand('primary', $columns, $name, $algorithm);
+        return $this->indexCommand('primary', $columns, $name);
     }
 
     /**
@@ -365,12 +354,11 @@ class Blueprint
      *
      * @param  string|array  $columns
      * @param  string  $name
-     * @param  string|null  $algorithm
      * @return \Illuminate\Support\Fluent
      */
-    public function unique($columns, $name = null, $algorithm = null)
+    public function unique($columns, $name = null)
     {
-        return $this->indexCommand('unique', $columns, $name, $algorithm);
+        return $this->indexCommand('unique', $columns, $name);
     }
 
     /**
@@ -378,12 +366,11 @@ class Blueprint
      *
      * @param  string|array  $columns
      * @param  string  $name
-     * @param  string|null  $algorithm
      * @return \Illuminate\Support\Fluent
      */
-    public function index($columns, $name = null, $algorithm = null)
+    public function index($columns, $name = null)
     {
-        return $this->indexCommand('index', $columns, $name, $algorithm);
+        return $this->indexCommand('index', $columns, $name);
     }
 
     /**
@@ -788,17 +775,15 @@ class Blueprint
     /**
      * Add nullable creation and update timestamps to the table.
      *
-     * Alias for self::timestamps().
-     *
      * @return void
      */
     public function nullableTimestamps()
     {
-        $this->timestamps();
+        return $this->timestamps();
     }
 
     /**
-     * Add nullable creation and update timestamps to the table.
+     * Add creation and update timestamps to the table.
      *
      * @return void
      */
@@ -832,16 +817,6 @@ class Blueprint
     }
 
     /**
-     * Add a "deleted at" timestampTz for the table.
-     *
-     * @return \Illuminate\Support\Fluent
-     */
-    public function softDeletesTz()
-    {
-        return $this->timestampTz('deleted_at')->nullable();
-    }
-
-    /**
      * Create a new binary column on the table.
      *
      * @param  string  $column
@@ -864,28 +839,6 @@ class Blueprint
     }
 
     /**
-     * Create a new IP address column on the table.
-     *
-     * @param  string  $column
-     * @return \Illuminate\Support\Fluent
-     */
-    public function ipAddress($column)
-    {
-        return $this->addColumn('ipAddress', $column);
-    }
-
-    /**
-     * Create a new MAC address column on the table.
-     *
-     * @param  string  $column
-     * @return \Illuminate\Support\Fluent
-     */
-    public function macAddress($column)
-    {
-        return $this->addColumn('macAddress', $column);
-    }
-
-    /**
      * Add the proper columns for a polymorphic table.
      *
      * @param  string  $name
@@ -897,22 +850,6 @@ class Blueprint
         $this->unsignedInteger("{$name}_id");
 
         $this->string("{$name}_type");
-
-        $this->index(["{$name}_id", "{$name}_type"], $indexName);
-    }
-
-    /**
-     * Add nullable columns for a polymorphic table.
-     *
-     * @param  string  $name
-     * @param  string|null  $indexName
-     * @return void
-     */
-    public function nullableMorphs($name, $indexName = null)
-    {
-        $this->unsignedInteger("{$name}_id")->nullable();
-
-        $this->string("{$name}_type")->nullable();
 
         $this->index(["{$name}_id", "{$name}_type"], $indexName);
     }
@@ -957,10 +894,9 @@ class Blueprint
      * @param  string        $type
      * @param  string|array  $columns
      * @param  string        $index
-     * @param  string|null   $algorithm
      * @return \Illuminate\Support\Fluent
      */
-    protected function indexCommand($type, $columns, $index, $algorithm = null)
+    protected function indexCommand($type, $columns, $index)
     {
         $columns = (array) $columns;
 
@@ -971,7 +907,7 @@ class Blueprint
             $index = $this->createIndexName($type, $columns);
         }
 
-        return $this->addCommand($type, compact('index', 'columns', 'algorithm'));
+        return $this->addCommand($type, compact('index', 'columns'));
     }
 
     /**
@@ -996,7 +932,7 @@ class Blueprint
      * @param  array   $parameters
      * @return \Illuminate\Support\Fluent
      */
-    public function addColumn($type, $name, array $parameters = [])
+    protected function addColumn($type, $name, array $parameters = [])
     {
         $attributes = array_merge(compact('type', 'name'), $parameters);
 

@@ -20,32 +20,25 @@ class Pluralizer
         'data',
         'deer',
         'education',
-        'emoji',
         'equipment',
-        'evidence',
-        'feedback',
         'fish',
-        'furniture',
         'gold',
         'information',
         'knowledge',
         'love',
-        'metadata',
+        'rain',
         'money',
         'moose',
         'nutrition',
         'offspring',
         'plankton',
-        'pokemon',
         'police',
-        'rain',
         'rice',
         'series',
         'sheep',
         'species',
         'swine',
         'traffic',
-        'wheat',
     ];
 
     /**
@@ -57,7 +50,7 @@ class Pluralizer
      */
     public static function plural($value, $count = 2)
     {
-        if ((int) $count === 1 || static::uncountable($value)) {
+        if ($count === 1 || static::uncountable($value)) {
             return $value;
         }
 

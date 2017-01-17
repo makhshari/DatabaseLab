@@ -187,10 +187,8 @@ class FilesystemManager implements FactoryContract
 
         $root = isset($s3Config['root']) ? $s3Config['root'] : null;
 
-        $options = isset($config['options']) ? $config['options'] : [];
-
         return $this->adapt($this->createFlysystem(
-            new S3Adapter(new S3Client($s3Config), $s3Config['bucket'], $root, $options), $config
+            new S3Adapter(new S3Client($s3Config), $s3Config['bucket'], $root), $config
         ));
     }
 
@@ -223,10 +221,8 @@ class FilesystemManager implements FactoryContract
             'username' => $config['username'], 'apiKey' => $config['key'],
         ]);
 
-        $root = isset($config['root']) ? $config['root'] : null;
-
         return $this->adapt($this->createFlysystem(
-            new RackspaceAdapter($this->getRackspaceContainer($client, $config), $root), $config
+            new RackspaceAdapter($this->getRackspaceContainer($client, $config)), $config
         ));
     }
 
@@ -255,7 +251,7 @@ class FilesystemManager implements FactoryContract
      */
     protected function createFlysystem(AdapterInterface $adapter, array $config)
     {
-        $config = Arr::only($config, ['visibility', 'disable_asserts', 'url']);
+        $config = Arr::only($config, ['visibility']);
 
         return new Flysystem($adapter, count($config) > 0 ? $config : null);
     }
@@ -325,6 +321,6 @@ class FilesystemManager implements FactoryContract
      */
     public function __call($method, $parameters)
     {
-        return $this->disk()->$method(...$parameters);
+        return call_user_func_array([$this->disk(), $method], $parameters);
     }
 }

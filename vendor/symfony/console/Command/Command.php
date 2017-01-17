@@ -202,6 +202,8 @@ class Command
      *
      * @return int The command exit code
      *
+     * @throws \Exception
+     *
      * @see setCode()
      * @see execute()
      */
@@ -227,14 +229,7 @@ class Command
 
         if (null !== $this->processTitle) {
             if (function_exists('cli_set_process_title')) {
-                if (false === @cli_set_process_title($this->processTitle)) {
-                    if ('Darwin' === PHP_OS) {
-                        $output->writeln('<comment>Running "cli_get_process_title" as an unprivileged user is not supported on MacOS.</comment>');
-                    } else {
-                        $error = error_get_last();
-                        trigger_error($error['message'], E_USER_WARNING);
-                    }
-                }
+                cli_set_process_title($this->processTitle);
             } elseif (function_exists('setproctitle')) {
                 setproctitle($this->processTitle);
             } elseif (OutputInterface::VERBOSITY_VERY_VERBOSE === $output->getVerbosity()) {
@@ -272,7 +267,7 @@ class Command
      *
      * @param callable $code A callable(InputInterface $input, OutputInterface $output)
      *
-     * @return $this
+     * @return Command The current instance
      *
      * @throws InvalidArgumentException
      *
@@ -283,15 +278,7 @@ class Command
         if ($code instanceof \Closure) {
             $r = new \ReflectionFunction($code);
             if (null === $r->getClosureThis()) {
-                if (PHP_VERSION_ID < 70000) {
-                    // Bug in PHP5: https://bugs.php.net/bug.php?id=64761
-                    // This means that we cannot bind static closures and therefore we must
-                    // ignore any errors here.  There is no way to test if the closure is
-                    // bindable.
-                    $code = @\Closure::bind($code, $this);
-                } else {
-                    $code = \Closure::bind($code, $this);
-                }
+                $code = \Closure::bind($code, $this);
             }
         }
 
@@ -313,13 +300,13 @@ class Command
             return;
         }
 
-        $this->definition->addOptions($this->application->getDefinition()->getOptions());
-
         if ($mergeArgs) {
             $currentArguments = $this->definition->getArguments();
             $this->definition->setArguments($this->application->getDefinition()->getArguments());
             $this->definition->addArguments($currentArguments);
         }
+
+        $this->definition->addOptions($this->application->getDefinition()->getOptions());
 
         $this->applicationDefinitionMerged = true;
         if ($mergeArgs) {
@@ -332,7 +319,7 @@ class Command
      *
      * @param array|InputDefinition $definition An array of argument and option instances or a definition instance
      *
-     * @return $this
+     * @return Command The current instance
      */
     public function setDefinition($definition)
     {
@@ -380,7 +367,7 @@ class Command
      * @param string $description A description text
      * @param mixed  $default     The default value (for InputArgument::OPTIONAL mode only)
      *
-     * @return $this
+     * @return Command The current instance
      */
     public function addArgument($name, $mode = null, $description = '', $default = null)
     {
@@ -396,9 +383,9 @@ class Command
      * @param string $shortcut    The shortcut (can be null)
      * @param int    $mode        The option mode: One of the InputOption::VALUE_* constants
      * @param string $description A description text
-     * @param mixed  $default     The default value (must be null for InputOption::VALUE_NONE)
+     * @param mixed  $default     The default value (must be null for InputOption::VALUE_REQUIRED or InputOption::VALUE_NONE)
      *
-     * @return $this
+     * @return Command The current instance
      */
     public function addOption($name, $shortcut = null, $mode = null, $description = '', $default = null)
     {
@@ -417,7 +404,7 @@ class Command
      *
      * @param string $name The command name
      *
-     * @return $this
+     * @return Command The current instance
      *
      * @throws InvalidArgumentException When the name is invalid
      */
@@ -440,7 +427,7 @@ class Command
      *
      * @param string $title The process title
      *
-     * @return $this
+     * @return Command The current instance
      */
     public function setProcessTitle($title)
     {
@@ -464,7 +451,7 @@ class Command
      *
      * @param string $description The description for the command
      *
-     * @return $this
+     * @return Command The current instance
      */
     public function setDescription($description)
     {
@@ -488,7 +475,7 @@ class Command
      *
      * @param string $help The help for the command
      *
-     * @return $this
+     * @return Command The current instance
      */
     public function setHelp($help)
     {
@@ -534,7 +521,7 @@ class Command
      *
      * @param string[] $aliases An array of aliases for the command
      *
-     * @return $this
+     * @return Command The current instance
      *
      * @throws InvalidArgumentException When an alias is invalid
      */
@@ -585,8 +572,6 @@ class Command
      * Add a command usage example.
      *
      * @param string $usage The usage, it'll be prefixed with the command name
-     *
-     * @return $this
      */
     public function addUsage($usage)
     {
@@ -616,15 +601,10 @@ class Command
      *
      * @return mixed The helper value
      *
-     * @throws LogicException           if no HelperSet is defined
      * @throws InvalidArgumentException if the helper is not defined
      */
     public function getHelper($name)
     {
-        if (null === $this->helperSet) {
-            throw new LogicException(sprintf('Cannot retrieve helper "%s" because there is no HelperSet defined. Did you forget to add your command to the application or to set the application on the command using the setApplication() method? You can also set the HelperSet directly using the setHelperSet() method.', $name));
-        }
-
         return $this->helperSet->get($name);
     }
 

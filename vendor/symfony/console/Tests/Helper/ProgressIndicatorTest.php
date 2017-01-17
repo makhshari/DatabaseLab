@@ -5,9 +5,6 @@ namespace Symfony\Component\Console\Tests\Helper;
 use Symfony\Component\Console\Helper\ProgressIndicator;
 use Symfony\Component\Console\Output\StreamOutput;
 
-/**
- * @group time-sensitive
- */
 class ProgressIndicatorTest extends \PHPUnit_Framework_TestCase
 {
     public function testDefaultIndicator()
@@ -44,11 +41,11 @@ class ProgressIndicatorTest extends \PHPUnit_Framework_TestCase
             $this->generateOutput(' \\ Starting...').
             $this->generateOutput(' \\ Advancing...').
             $this->generateOutput(' | Advancing...').
-            $this->generateOutput(' | Done...').
+            $this->generateOutput(' | Done...     ').
             PHP_EOL.
             $this->generateOutput(' - Starting Again...').
             $this->generateOutput(' \\ Starting Again...').
-            $this->generateOutput(' \\ Done Again...').
+            $this->generateOutput(' \\ Done Again...    ').
             PHP_EOL,
             stream_get_contents($output->getStream())
         );
@@ -70,8 +67,8 @@ class ProgressIndicatorTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(
             ' Starting...'.PHP_EOL.
-            ' Midway...'.PHP_EOL.
-            ' Done...'.PHP_EOL.PHP_EOL,
+            ' Midway...  '.PHP_EOL.
+            ' Done...    '.PHP_EOL.PHP_EOL,
             stream_get_contents($output->getStream())
         );
     }
@@ -177,6 +174,6 @@ class ProgressIndicatorTest extends \PHPUnit_Framework_TestCase
     {
         $count = substr_count($expected, "\n");
 
-        return "\x0D\x1B[2K".($count ? sprintf("\033[%dA", $count) : '').$expected;
+        return "\x0D".($count ? sprintf("\033[%dA", $count) : '').$expected;
     }
 }

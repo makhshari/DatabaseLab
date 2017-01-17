@@ -58,7 +58,7 @@ class VendorPublishCommand extends Command
 
         $tags = $tags ?: [null];
 
-        foreach ((array) $tags as $tag) {
+        foreach ($tags as $tag) {
             $this->publishTag($tag);
         }
     }
@@ -69,7 +69,7 @@ class VendorPublishCommand extends Command
      * @param  string  $tag
      * @return mixed
      */
-    protected function publishTag($tag)
+    private function publishTag($tag)
     {
         $paths = ServiceProvider::pathsToPublish(
             $this->option('provider'), $tag

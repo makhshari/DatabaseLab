@@ -7,21 +7,9 @@ use Throwable;
 use Illuminate\Queue\Jobs\SyncJob;
 use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\Queue as QueueContract;
-use Symfony\Component\Debug\Exception\FatalThrowableError;
 
 class SyncQueue extends Queue implements QueueContract
 {
-    /**
-     * Get the size of the queue.
-     *
-     * @param  string  $queue
-     * @return int
-     */
-    public function size($queue = null)
-    {
-        return 0;
-    }
-
     /**
      * Push a new job onto the queue.
      *
@@ -34,39 +22,23 @@ class SyncQueue extends Queue implements QueueContract
      */
     public function push($job, $data = '', $queue = null)
     {
-        $queueJob = $this->resolveJob($this->createPayload($job, $data, $queue), $queue);
+        $queueJob = $this->resolveJob($this->createPayload($job, $data, $queue));
 
         try {
-            $this->raiseBeforeJobEvent($queueJob);
-
             $queueJob->fire();
 
             $this->raiseAfterJobEvent($queueJob);
         } catch (Exception $e) {
-            $this->handleSyncException($queueJob, $e);
+            $this->handleFailedJob($queueJob);
+
+            throw $e;
         } catch (Throwable $e) {
-            $this->handleSyncException($queueJob, new FatalThrowableError($e));
+            $this->handleFailedJob($queueJob);
+
+            throw $e;
         }
 
         return 0;
-    }
-
-    /**
-     * Handle an exception that occurred while processing a job.
-     *
-     * @param  \Illuminate\Queue\Jobs\Job  $queueJob
-     * @param  \Exception  $e
-     * @return void
-     *
-     * @throws \Exception
-     */
-    protected function handleSyncException($queueJob, $e)
-    {
-        $this->raiseExceptionOccurredJobEvent($queueJob, $e);
-
-        $this->handleFailedJob($queueJob, $e);
-
-        throw $e;
     }
 
     /**
@@ -111,25 +83,11 @@ class SyncQueue extends Queue implements QueueContract
      * Resolve a Sync job instance.
      *
      * @param  string  $payload
-     * @param  string  $queue
      * @return \Illuminate\Queue\Jobs\SyncJob
      */
-    protected function resolveJob($payload, $queue)
+    protected function resolveJob($payload)
     {
-        return new SyncJob($this->container, $payload, $queue);
-    }
-
-    /**
-     * Raise the before queue job event.
-     *
-     * @param  \Illuminate\Contracts\Queue\Job  $job
-     * @return void
-     */
-    protected function raiseBeforeJobEvent(Job $job)
-    {
-        if ($this->container->bound('events')) {
-            $this->container['events']->fire(new Events\JobProcessing('sync', $job));
-        }
+        return new SyncJob($this->container, $payload);
     }
 
     /**
@@ -140,22 +98,10 @@ class SyncQueue extends Queue implements QueueContract
      */
     protected function raiseAfterJobEvent(Job $job)
     {
-        if ($this->container->bound('events')) {
-            $this->container['events']->fire(new Events\JobProcessed('sync', $job));
-        }
-    }
+        $data = json_decode($job->getRawBody(), true);
 
-    /**
-     * Raise the exception occurred queue job event.
-     *
-     * @param  \Illuminate\Contracts\Queue\Job  $job
-     * @param  \Exception  $e
-     * @return void
-     */
-    protected function raiseExceptionOccurredJobEvent(Job $job, $e)
-    {
         if ($this->container->bound('events')) {
-            $this->container['events']->fire(new Events\JobExceptionOccurred('sync', $job, $e));
+            $this->container['events']->fire(new Events\JobProcessed('sync', $job, $data));
         }
     }
 
@@ -163,27 +109,27 @@ class SyncQueue extends Queue implements QueueContract
      * Handle the failed job.
      *
      * @param  \Illuminate\Contracts\Queue\Job  $job
-     * @param  \Exception  $e
      * @return array
      */
-    protected function handleFailedJob(Job $job, $e)
+    protected function handleFailedJob(Job $job)
     {
-        $job->failed($e);
+        $job->failed();
 
-        $this->raiseFailedJobEvent($job, $e);
+        $this->raiseFailedJobEvent($job);
     }
 
     /**
      * Raise the failed queue job event.
      *
      * @param  \Illuminate\Contracts\Queue\Job  $job
-     * @param  \Exception  $e
      * @return void
      */
-    protected function raiseFailedJobEvent(Job $job, $e)
+    protected function raiseFailedJobEvent(Job $job)
     {
+        $data = json_decode($job->getRawBody(), true);
+
         if ($this->container->bound('events')) {
-            $this->container['events']->fire(new Events\JobFailed('sync', $job, $e));
+            $this->container['events']->fire(new Events\JobFailed('sync', $job, $data));
         }
     }
 }

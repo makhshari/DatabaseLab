@@ -25,23 +25,21 @@ class Cookie
     protected $path;
     protected $secure;
     protected $httpOnly;
-    private $raw;
 
     /**
      * Constructor.
      *
-     * @param string                        $name     The name of the cookie
-     * @param string                        $value    The value of the cookie
-     * @param int|string|\DateTimeInterface $expire   The time the cookie expires
-     * @param string                        $path     The path on the server in which the cookie will be available on
-     * @param string                        $domain   The domain that the cookie is available to
-     * @param bool                          $secure   Whether the cookie should only be transmitted over a secure HTTPS connection from the client
-     * @param bool                          $httpOnly Whether the cookie will be made accessible only through the HTTP protocol
-     * @param bool                          $raw      Whether the cookie value should be sent with no url encoding
+     * @param string                                  $name     The name of the cookie
+     * @param string                                  $value    The value of the cookie
+     * @param int|string|\DateTime|\DateTimeInterface $expire   The time the cookie expires
+     * @param string                                  $path     The path on the server in which the cookie will be available on
+     * @param string                                  $domain   The domain that the cookie is available to
+     * @param bool                                    $secure   Whether the cookie should only be transmitted over a secure HTTPS connection from the client
+     * @param bool                                    $httpOnly Whether the cookie will be made accessible only through the HTTP protocol
      *
      * @throws \InvalidArgumentException
      */
-    public function __construct($name, $value = null, $expire = 0, $path = '/', $domain = null, $secure = false, $httpOnly = true, $raw = false)
+    public function __construct($name, $value = null, $expire = 0, $path = '/', $domain = null, $secure = false, $httpOnly = true)
     {
         // from PHP source code
         if (preg_match("/[=,; \t\r\n\013\014]/", $name)) {
@@ -53,12 +51,12 @@ class Cookie
         }
 
         // convert expiration time to a Unix timestamp
-        if ($expire instanceof \DateTimeInterface) {
+        if ($expire instanceof \DateTime || $expire instanceof \DateTimeInterface) {
             $expire = $expire->format('U');
         } elseif (!is_numeric($expire)) {
             $expire = strtotime($expire);
 
-            if (false === $expire) {
+            if (false === $expire || -1 === $expire) {
                 throw new \InvalidArgumentException('The cookie expiration time is not valid.');
             }
         }
@@ -66,11 +64,10 @@ class Cookie
         $this->name = $name;
         $this->value = $value;
         $this->domain = $domain;
-        $this->expire = 0 < $expire ? (int) $expire : 0;
+        $this->expire = $expire;
         $this->path = empty($path) ? '/' : $path;
         $this->secure = (bool) $secure;
         $this->httpOnly = (bool) $httpOnly;
-        $this->raw = (bool) $raw;
     }
 
     /**
@@ -80,20 +77,20 @@ class Cookie
      */
     public function __toString()
     {
-        $str = ($this->isRaw() ? $this->getName() : urlencode($this->getName())).'=';
+        $str = urlencode($this->getName()).'=';
 
         if ('' === (string) $this->getValue()) {
             $str .= 'deleted; expires='.gmdate('D, d-M-Y H:i:s T', time() - 31536001);
         } else {
-            $str .= $this->isRaw() ? $this->getValue() : urlencode($this->getValue());
+            $str .= urlencode($this->getValue());
 
-            if (0 !== $this->getExpiresTime()) {
+            if ($this->getExpiresTime() !== 0) {
                 $str .= '; expires='.gmdate('D, d-M-Y H:i:s T', $this->getExpiresTime());
             }
         }
 
-        if ($this->getPath()) {
-            $str .= '; path='.$this->getPath();
+        if ($this->path) {
+            $str .= '; path='.$this->path;
         }
 
         if ($this->getDomain()) {
@@ -124,7 +121,7 @@ class Cookie
     /**
      * Gets the value of the cookie.
      *
-     * @return string|null
+     * @return string
      */
     public function getValue()
     {
@@ -134,7 +131,7 @@ class Cookie
     /**
      * Gets the domain that the cookie is available to.
      *
-     * @return string|null
+     * @return string
      */
     public function getDomain()
     {
@@ -189,15 +186,5 @@ class Cookie
     public function isCleared()
     {
         return $this->expire < time();
-    }
-
-    /**
-     * Checks if the cookie value should be sent with no url encoding.
-     *
-     * @return bool
-     */
-    public function isRaw()
-    {
-        return $this->raw;
     }
 }

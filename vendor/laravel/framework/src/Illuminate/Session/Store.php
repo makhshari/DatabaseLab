@@ -2,7 +2,6 @@
 
 namespace Illuminate\Session;
 
-use Closure;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use SessionHandlerInterface;
@@ -127,7 +126,7 @@ class Store implements SessionInterface
         if ($data) {
             $data = @unserialize($this->prepareForUnserialize($data));
 
-            if ($data !== false && ! is_null($data) && is_array($data)) {
+            if ($data !== false && $data !== null && is_array($data)) {
                 return $data;
             }
         }
@@ -185,7 +184,7 @@ class Store implements SessionInterface
      */
     public function isValidId($id)
     {
-        return is_string($id) && ctype_alnum($id) && strlen($id) === 40;
+        return is_string($id) && preg_match('/^[a-f0-9]{40}$/', $id);
     }
 
     /**
@@ -195,7 +194,7 @@ class Store implements SessionInterface
      */
     protected function generateSessionId()
     {
-        return Str::random(40);
+        return sha1(uniqid('', true).Str::random(25).microtime(true));
     }
 
     /**
@@ -235,7 +234,7 @@ class Store implements SessionInterface
 
         $this->setExists(false);
 
-        $this->setId($this->generateSessionId());
+        $this->id = $this->generateSessionId();
 
         return true;
     }
@@ -299,27 +298,11 @@ class Store implements SessionInterface
      */
     public function ageFlashData()
     {
-        $this->forget($this->get('_flash.old', []));
+        $this->forget($this->get('flash.old', []));
 
-        $this->put('_flash.old', $this->get('_flash.new', []));
+        $this->put('flash.old', $this->get('flash.new', []));
 
-        $this->put('_flash.new', []);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function exists($key)
-    {
-        $keys = is_array($key) ? $key : func_get_args();
-
-        foreach ($keys as $value) {
-            if (! Arr::exists($this->attributes, $value)) {
-                return false;
-            }
-        }
-
-        return true;
+        $this->put('flash.new', []);
     }
 
     /**
@@ -327,15 +310,7 @@ class Store implements SessionInterface
      */
     public function has($name)
     {
-        $keys = is_array($name) ? $name : func_get_args();
-
-        foreach ($keys as $value) {
-            if (is_null($this->get($value))) {
-                return false;
-            }
-        }
-
-        return true;
+        return ! is_null($this->get($name));
     }
 
     /**
@@ -415,24 +390,6 @@ class Store implements SessionInterface
     }
 
     /**
-     * Get an item from the session, or store the default value.
-     *
-     * @param  string  $key
-     * @param  \Closure  $callback
-     * @return mixed
-     */
-    public function remember($key, Closure $callback)
-    {
-        if (! is_null($value = $this->get($key))) {
-            return $value;
-        }
-
-        return tap($callback(), function ($value) use ($key) {
-            $this->put($key, $value);
-        });
-    }
-
-    /**
      * Push a value onto a session array.
      *
      * @param  string  $key
@@ -449,34 +406,6 @@ class Store implements SessionInterface
     }
 
     /**
-     * Increment the value of an item in the session.
-     *
-     * @param  string  $key
-     * @param  int  $amount
-     * @return mixed
-     */
-    public function increment($key, $amount = 1)
-    {
-        $value = $this->get($key, 0) + $amount;
-
-        $this->put($key, $value);
-
-        return $value;
-    }
-
-    /**
-     * Decrement the value of an item in the session.
-     *
-     * @param  string  $key
-     * @param  int  $amount
-     * @return int
-     */
-    public function decrement($key, $amount = 1)
-    {
-        return $this->increment($key, $amount * -1);
-    }
-
-    /**
      * Flash a key / value pair to the session.
      *
      * @param  string  $key
@@ -487,13 +416,14 @@ class Store implements SessionInterface
     {
         $this->put($key, $value);
 
-        $this->push('_flash.new', $key);
+        $this->push('flash.new', $key);
 
         $this->removeFromOldFlashData([$key]);
     }
 
     /**
-     * Flash a key / value pair to the session for immediate use.
+     * Flash a key / value pair to the session
+     * for immediate use.
      *
      * @param  string $key
      * @param  mixed $value
@@ -503,7 +433,7 @@ class Store implements SessionInterface
     {
         $this->put($key, $value);
 
-        $this->push('_flash.old', $key);
+        $this->push('flash.old', $key);
     }
 
     /**
@@ -524,9 +454,9 @@ class Store implements SessionInterface
      */
     public function reflash()
     {
-        $this->mergeNewFlashes($this->get('_flash.old', []));
+        $this->mergeNewFlashes($this->get('flash.old', []));
 
-        $this->put('_flash.old', []);
+        $this->put('flash.old', []);
     }
 
     /**
@@ -552,9 +482,9 @@ class Store implements SessionInterface
      */
     protected function mergeNewFlashes(array $keys)
     {
-        $values = array_unique(array_merge($this->get('_flash.new', []), $keys));
+        $values = array_unique(array_merge($this->get('flash.new', []), $keys));
 
-        $this->put('_flash.new', $values);
+        $this->put('flash.new', $values);
     }
 
     /**
@@ -565,7 +495,7 @@ class Store implements SessionInterface
      */
     protected function removeFromOldFlashData(array $keys)
     {
-        $this->put('_flash.old', array_diff($this->get('_flash.old', []), $keys));
+        $this->put('flash.old', array_diff($this->get('flash.old', []), $keys));
     }
 
     /**
@@ -718,7 +648,7 @@ class Store implements SessionInterface
      */
     public function setPreviousUrl($url)
     {
-        $this->put('_previous.url', $url);
+        return $this->put('_previous.url', $url);
     }
 
     /**

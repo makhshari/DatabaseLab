@@ -46,19 +46,6 @@ class BeanstalkdQueue extends Queue implements QueueContract
     }
 
     /**
-     * Get the size of the queue.
-     *
-     * @param  string  $queue
-     * @return int
-     */
-    public function size($queue = null)
-    {
-        $queue = $this->getQueue($queue);
-
-        return (int) $this->pheanstalk->statsTube($queue)->total_jobs;
-    }
-
-    /**
      * Push a new job onto the queue.
      *
      * @param  string  $job
@@ -130,7 +117,7 @@ class BeanstalkdQueue extends Queue implements QueueContract
      */
     public function deleteMessage($queue, $id)
     {
-        $this->pheanstalk->useTube($this->getQueue($queue))->delete(new PheanstalkJob($id, ''));
+        $this->pheanstalk->useTube($this->getQueue($queue))->delete($id);
     }
 
     /**

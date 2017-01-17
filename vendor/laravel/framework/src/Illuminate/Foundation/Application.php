@@ -25,7 +25,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      *
      * @var string
      */
-    const VERSION = '5.3.29';
+    const VERSION = '5.2.19';
 
     /**
      * The base path for the Laravel installation.
@@ -130,7 +130,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      *
      * @var string
      */
-    protected $namespace;
+    protected $namespace = null;
 
     /**
      * Create a new Illuminate application instance.
@@ -276,14 +276,10 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
     protected function bindPathsInContainer()
     {
         $this->instance('path', $this->path());
-        $this->instance('path.base', $this->basePath());
-        $this->instance('path.lang', $this->langPath());
-        $this->instance('path.config', $this->configPath());
-        $this->instance('path.public', $this->publicPath());
-        $this->instance('path.storage', $this->storagePath());
-        $this->instance('path.database', $this->databasePath());
-        $this->instance('path.resources', $this->resourcePath());
-        $this->instance('path.bootstrap', $this->bootstrapPath());
+
+        foreach (['base', 'config', 'database', 'lang', 'public', 'storage'] as $path) {
+            $this->instance('path.'.$path, $this->{$path.'Path'}());
+        }
     }
 
     /**
@@ -304,16 +300,6 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
     public function basePath()
     {
         return $this->basePath;
-    }
-
-    /**
-     * Get the path to the bootstrap directory.
-     *
-     * @return string
-     */
-    public function bootstrapPath()
-    {
-        return $this->basePath.DIRECTORY_SEPARATOR.'bootstrap';
     }
 
     /**
@@ -358,7 +344,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      */
     public function langPath()
     {
-        return $this->resourcePath().DIRECTORY_SEPARATOR.'lang';
+        return $this->basePath.DIRECTORY_SEPARATOR.'resources'.DIRECTORY_SEPARATOR.'lang';
     }
 
     /**
@@ -394,16 +380,6 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
         $this->instance('path.storage', $path);
 
         return $this;
-    }
-
-    /**
-     * Get the path to the resources directory.
-     *
-     * @return string
-     */
-    public function resourcePath()
-    {
-        return $this->basePath.DIRECTORY_SEPARATOR.'resources';
     }
 
     /**
@@ -453,19 +429,10 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
     }
 
     /**
-     * Get the fully qualified path to the environment file.
-     *
-     * @return string
-     */
-    public function environmentFilePath()
-    {
-        return $this->environmentPath().'/'.$this->environmentFile();
-    }
-
-    /**
      * Get or check the current application environment.
      *
-     * @return string|bool
+     * @param  mixed
+     * @return string
      */
     public function environment()
     {
@@ -561,9 +528,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
             $provider = $this->resolveProviderClass($provider);
         }
 
-        if (method_exists($provider, 'register')) {
-            $provider->register();
-        }
+        $provider->register();
 
         // Once we have registered the service we will iterate through the options
         // and set each of them on the application so they will be available on
@@ -576,7 +541,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
 
         // If the application has already booted, we will call this boot method on
         // the provider class so it has an opportunity to do its boot logic and
-        // will be ready for any usage by this developer's application logic.
+        // will be ready for any usage by the developer's application logics.
         if ($this->booted) {
             $this->bootProvider($provider);
         }
@@ -594,7 +559,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
     {
         $name = is_string($provider) ? $provider : get_class($provider);
 
-        return Arr::first($this->serviceProviders, function ($value) use ($name) {
+        return Arr::first($this->serviceProviders, function ($key, $value) use ($name) {
             return $value instanceof $name;
         });
     }
@@ -845,7 +810,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      */
     public function getCachedConfigPath()
     {
-        return $this->bootstrapPath().'/cache/config.php';
+        return $this->basePath().'/bootstrap/cache/config.php';
     }
 
     /**
@@ -865,7 +830,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      */
     public function getCachedRoutesPath()
     {
-        return $this->bootstrapPath().'/cache/routes.php';
+        return $this->basePath().'/bootstrap/cache/routes.php';
     }
 
     /**
@@ -875,7 +840,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      */
     public function getCachedCompilePath()
     {
-        return $this->bootstrapPath().'/cache/compiled.php';
+        return $this->basePath().'/bootstrap/cache/compiled.php';
     }
 
     /**
@@ -885,7 +850,7 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
      */
     public function getCachedServicesPath()
     {
-        return $this->bootstrapPath().'/cache/services.php';
+        return $this->basePath().'/bootstrap/cache/services.php';
     }
 
     /**
@@ -1054,17 +1019,6 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
     }
 
     /**
-     * Determine if application locale is the given locale.
-     *
-     * @param  string  $locale
-     * @return bool
-     */
-    public function isLocale($locale)
-    {
-        return $this->getLocale() == $locale;
-    }
-
-    /**
      * Register the core class aliases in the container.
      *
      * @return void
@@ -1096,7 +1050,6 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
             'auth.password.broker' => ['Illuminate\Auth\Passwords\PasswordBroker', 'Illuminate\Contracts\Auth\PasswordBroker'],
             'queue'                => ['Illuminate\Queue\QueueManager', 'Illuminate\Contracts\Queue\Factory', 'Illuminate\Contracts\Queue\Monitor'],
             'queue.connection'     => ['Illuminate\Contracts\Queue\Queue'],
-            'queue.failer'         => ['Illuminate\Queue\Failed\FailedJobProviderInterface'],
             'redirect'             => ['Illuminate\Routing\Redirector'],
             'redis'                => ['Illuminate\Redis\Database', 'Illuminate\Contracts\Redis\Database'],
             'request'              => ['Illuminate\Http\Request', 'Symfony\Component\HttpFoundation\Request'],
@@ -1125,6 +1078,20 @@ class Application extends Container implements ApplicationContract, HttpKernelIn
         parent::flush();
 
         $this->loadedProviders = [];
+    }
+
+    /**
+     * Get the used kernel object.
+     *
+     * @return \Illuminate\Contracts\Console\Kernel|\Illuminate\Contracts\Http\Kernel
+     */
+    protected function getKernel()
+    {
+        $kernelContract = $this->runningInConsole()
+                    ? 'Illuminate\Contracts\Console\Kernel'
+                    : 'Illuminate\Contracts\Http\Kernel';
+
+        return $this->make($kernelContract);
     }
 
     /**

@@ -2,11 +2,10 @@
 
 namespace Illuminate\Foundation\Console;
 
-use Closure;
 use Exception;
 use Throwable;
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Console\Application as Artisan;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Console\Kernel as KernelContract;
@@ -41,13 +40,6 @@ class Kernel implements KernelContract
      * @var array
      */
     protected $commands = [];
-
-    /**
-     * Indicates if the Closure commands have been loaded.
-     *
-     * @var bool
-     */
-    protected $commandsLoaded = false;
 
     /**
      * The bootstrap classes for the application.
@@ -112,12 +104,6 @@ class Kernel implements KernelContract
         try {
             $this->bootstrap();
 
-            if (! $this->commandsLoaded) {
-                $this->commands();
-
-                $this->commandsLoaded = true;
-            }
-
             return $this->getArtisan()->run($input, $output);
         } catch (Exception $e) {
             $this->reportException($e);
@@ -160,45 +146,6 @@ class Kernel implements KernelContract
     }
 
     /**
-     * Register the Closure based commands for the application.
-     *
-     * @return void
-     */
-    protected function commands()
-    {
-        //
-    }
-
-    /**
-     * Register a Closure based command with the application.
-     *
-     * @param  string  $signature
-     * @param  Closure  $callback
-     * @return \Illuminate\Foundation\Console\ClosureCommand
-     */
-    public function command($signature, Closure $callback)
-    {
-        $command = new ClosureCommand($signature, $callback);
-
-        Artisan::starting(function ($artisan) use ($command) {
-            $artisan->add($command);
-        });
-
-        return $command;
-    }
-
-    /**
-     * Register the given command with the console application.
-     *
-     * @param  \Symfony\Component\Console\Command\Command  $command
-     * @return void
-     */
-    public function registerCommand($command)
-    {
-        $this->getArtisan()->add($command);
-    }
-
-    /**
      * Run an Artisan console command by name.
      *
      * @param  string  $command
@@ -208,12 +155,6 @@ class Kernel implements KernelContract
     public function call($command, array $parameters = [])
     {
         $this->bootstrap();
-
-        if (! $this->commandsLoaded) {
-            $this->commands();
-
-            $this->commandsLoaded = true;
-        }
 
         return $this->getArtisan()->call($command, $parameters);
     }
@@ -286,17 +227,6 @@ class Kernel implements KernelContract
         }
 
         return $this->artisan;
-    }
-
-    /**
-     * Set the Artisan application instance.
-     *
-     * @param  \Illuminate\Console\Application  $artisan
-     * @return void
-     */
-    public function setArtisan($artisan)
-    {
-        $this->artisan = $artisan;
     }
 
     /**

@@ -82,7 +82,7 @@ class ForkingLoop extends Loop
         fwrite($up, $this->serializeReturn($shell->getScopeVariables()));
         fclose($up);
 
-        posix_kill(posix_getpid(), SIGKILL);
+        exit;
     }
 
     /**
@@ -149,26 +149,20 @@ class ForkingLoop extends Loop
     private function serializeReturn(array $return)
     {
         $serializable = array();
-
         foreach ($return as $key => $value) {
-            // No need to return magic variables
-            if ($key === '_' || $key === '_e') {
-                continue;
-            }
-
             // Resources don't error, but they don't serialize well either.
-            if (is_resource($value) || $value instanceof \Closure) {
+            if (is_resource($value)) {
                 continue;
             }
 
             try {
-                @serialize($value);
+                serialize($value);
                 $serializable[$key] = $value;
             } catch (\Exception $e) {
                 // we'll just ignore this one...
             }
         }
 
-        return @serialize($serializable);
+        return serialize($serializable);
     }
 }

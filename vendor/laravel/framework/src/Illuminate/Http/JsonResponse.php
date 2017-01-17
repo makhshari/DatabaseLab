@@ -13,6 +13,13 @@ class JsonResponse extends BaseJsonResponse
     use ResponseTrait;
 
     /**
+     * The json encoding options.
+     *
+     * @var int
+     */
+    protected $jsonOptions;
+
+    /**
      * Constructor.
      *
      * @param  mixed  $data
@@ -22,20 +29,9 @@ class JsonResponse extends BaseJsonResponse
      */
     public function __construct($data = null, $status = 200, $headers = [], $options = 0)
     {
-        $this->encodingOptions = $options;
+        $this->jsonOptions = $options;
 
         parent::__construct($data, $status, $headers);
-    }
-
-    /**
-     * Sets the JSONP callback.
-     *
-     * @param  string|null  $callback
-     * @return $this
-     */
-    public function withCallback($callback = null)
-    {
-        return $this->setCallback($callback);
     }
 
     /**
@@ -56,13 +52,13 @@ class JsonResponse extends BaseJsonResponse
     public function setData($data = [])
     {
         if ($data instanceof Arrayable) {
-            $this->data = json_encode($data->toArray(), $this->encodingOptions);
+            $this->data = json_encode($data->toArray(), $this->jsonOptions);
         } elseif ($data instanceof Jsonable) {
-            $this->data = $data->toJson($this->encodingOptions);
+            $this->data = $data->toJson($this->jsonOptions);
         } elseif ($data instanceof JsonSerializable) {
-            $this->data = json_encode($data->jsonSerialize(), $this->encodingOptions);
+            $this->data = json_encode($data->jsonSerialize(), $this->jsonOptions);
         } else {
-            $this->data = json_encode($data, $this->encodingOptions);
+            $this->data = json_encode($data, $this->jsonOptions);
         }
 
         if (JSON_ERROR_NONE !== json_last_error()) {
@@ -79,15 +75,7 @@ class JsonResponse extends BaseJsonResponse
      */
     public function getJsonOptions()
     {
-        return $this->getEncodingOptions();
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setEncodingOptions($encodingOptions)
-    {
-        return $this->setJsonOptions($encodingOptions);
+        return $this->jsonOptions;
     }
 
     /**
@@ -98,7 +86,7 @@ class JsonResponse extends BaseJsonResponse
      */
     public function setJsonOptions($options)
     {
-        $this->encodingOptions = (int) $options;
+        $this->jsonOptions = $options;
 
         return $this->setData($this->getData());
     }

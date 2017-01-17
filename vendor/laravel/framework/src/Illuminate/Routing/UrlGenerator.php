@@ -130,22 +130,15 @@ class UrlGenerator implements UrlGeneratorContract
     /**
      * Get the URL for the previous request.
      *
-     * @param  mixed  $fallback
      * @return string
      */
-    public function previous($fallback = false)
+    public function previous()
     {
         $referrer = $this->request->headers->get('referer');
 
         $url = $referrer ? $this->to($referrer) : $this->getPreviousUrlFromSession();
 
-        if ($url) {
-            return $url;
-        } elseif ($fallback) {
-            return $this->to($fallback);
-        } else {
-            return $this->to('/');
-        }
+        return $url ?: $this->to('/');
     }
 
     /**
@@ -179,8 +172,8 @@ class UrlGenerator implements UrlGeneratorContract
         $root = $this->getRootUrl($scheme);
 
         if (($queryPosition = strpos($path, '?')) !== false) {
-            $query = substr($path, $queryPosition);
-            $path = substr($path, 0, $queryPosition);
+            $query = mb_substr($path, $queryPosition);
+            $path = mb_substr($path, 0, $queryPosition);
         } else {
             $query = '';
         }
@@ -201,7 +194,7 @@ class UrlGenerator implements UrlGeneratorContract
     }
 
     /**
-     * Generate the URL to an application asset.
+     * Generate a URL to an application asset.
      *
      * @param  string  $path
      * @param  bool|null  $secure
@@ -222,7 +215,7 @@ class UrlGenerator implements UrlGeneratorContract
     }
 
     /**
-     * Generate the URL to an asset from a custom root domain such as CDN, etc.
+     * Generate a URL to an asset from a custom root domain such as CDN, etc.
      *
      * @param  string  $root
      * @param  string  $path
@@ -253,7 +246,7 @@ class UrlGenerator implements UrlGeneratorContract
     }
 
     /**
-     * Generate the URL to a secure asset.
+     * Generate a URL to a secure asset.
      *
      * @param  string  $path
      * @return string
@@ -390,6 +383,7 @@ class UrlGenerator implements UrlGeneratorContract
     {
         return preg_replace_callback('/\{(.*?)\??\}/', function ($m) use (&$parameters) {
             return isset($parameters[$m[1]]) ? Arr::pull($parameters, $m[1]) : $m[0];
+
         }, $path);
     }
 
@@ -402,7 +396,7 @@ class UrlGenerator implements UrlGeneratorContract
      */
     protected function addQueryString($uri, array $parameters)
     {
-        // If the URI has a fragment, we will move it to the end of this URI since it will
+        // If the URI has a fragment, we will move it to the end of the URI since it will
         // need to come after any query string that may be added to the URL else it is
         // not going to be available. We will remove it then append it back on here.
         if (! is_null($fragment = parse_url($uri, PHP_URL_FRAGMENT))) {
@@ -483,7 +477,9 @@ class UrlGenerator implements UrlGeneratorContract
      */
     protected function getStringParameters(array $parameters)
     {
-        return array_filter($parameters, 'is_string', ARRAY_FILTER_USE_KEY);
+        return Arr::where($parameters, function ($k) {
+            return is_string($k);
+        });
     }
 
     /**
@@ -494,7 +490,9 @@ class UrlGenerator implements UrlGeneratorContract
      */
     protected function getNumericParameters(array $parameters)
     {
-        return array_filter($parameters, 'is_numeric', ARRAY_FILTER_USE_KEY);
+        return Arr::where($parameters, function ($k) {
+            return is_numeric($k);
+        });
     }
 
     /**

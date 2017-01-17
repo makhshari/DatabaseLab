@@ -4,8 +4,6 @@ namespace Illuminate\Pagination;
 
 use Closure;
 use ArrayIterator;
-use Illuminate\Support\Str;
-use Illuminate\Support\Collection;
 use Illuminate\Contracts\Support\Htmlable;
 
 abstract class AbstractPaginator implements Htmlable
@@ -50,7 +48,7 @@ abstract class AbstractPaginator implements Htmlable
      *
      * @var string|null
      */
-    protected $fragment;
+    protected $fragment = null;
 
     /**
      * The query string variable used to store the page.
@@ -74,25 +72,11 @@ abstract class AbstractPaginator implements Htmlable
     protected static $currentPageResolver;
 
     /**
-     * The view factory resolver callback.
+     * The default presenter resolver.
      *
      * @var \Closure
      */
-    protected static $viewFactoryResolver;
-
-    /**
-     * The default pagination view.
-     *
-     * @var string
-     */
-    public static $defaultView = 'pagination::default';
-
-    /**
-     * The default "simple" pagination view.
-     *
-     * @var string
-     */
-    public static $defaultSimpleView = 'pagination::simple-default';
+    protected static $presenterResolver;
 
     /**
      * Determine if the given value is a valid page number.
@@ -124,7 +108,7 @@ abstract class AbstractPaginator implements Htmlable
     }
 
     /**
-     * Get the URL for a given page number.
+     * Get a URL for a given page number.
      *
      * @param  int  $page
      * @return string
@@ -144,9 +128,8 @@ abstract class AbstractPaginator implements Htmlable
             $parameters = array_merge($this->query, $parameters);
         }
 
-        return $this->path
-                        .(Str::contains($this->path, '?') ? '&' : '?')
-                        .http_build_query($parameters, '', '&')
+        return $this->path.'?'
+                        .http_build_query($parameters, null, '&')
                         .$this->buildFragment();
     }
 
@@ -285,16 +268,6 @@ abstract class AbstractPaginator implements Htmlable
     }
 
     /**
-     * Determine if the paginator is on the first page.
-     *
-     * @return bool
-     */
-    public function onFirstPage()
-    {
-        return $this->currentPage() <= 1;
-    }
-
-    /**
      * Get the current page.
      *
      * @return int
@@ -368,46 +341,14 @@ abstract class AbstractPaginator implements Htmlable
     }
 
     /**
-     * Get an instance of the view factory from the resolver.
-     *
-     * @return \Illuminate\Contracts\View\Factory
-     */
-    public static function viewFactory()
-    {
-        return call_user_func(static::$viewFactoryResolver);
-    }
-
-    /**
-     * Set the view factory resolver callback.
+     * Set the default Presenter resolver.
      *
      * @param  \Closure  $resolver
      * @return void
      */
-    public static function viewFactoryResolver(Closure $resolver)
+    public static function presenter(Closure $resolver)
     {
-        static::$viewFactoryResolver = $resolver;
-    }
-
-    /**
-     * Set the default pagination view.
-     *
-     * @param  string  $view
-     * @return void
-     */
-    public static function defaultView($view)
-    {
-        static::$defaultView = $view;
-    }
-
-    /**
-     * Set the default "simple" pagination view.
-     *
-     * @param  string  $view
-     * @return void
-     */
-    public static function defaultSimpleView($view)
-    {
-        static::$defaultSimpleView = $view;
+        static::$presenterResolver = $resolver;
     }
 
     /**
@@ -487,19 +428,6 @@ abstract class AbstractPaginator implements Htmlable
     }
 
     /**
-     * Set the paginator's underlying collection.
-     *
-     * @param  \Illuminate\Support\Collection  $collection
-     * @return $this
-     */
-    public function setCollection(Collection $collection)
-    {
-        $this->items = $collection;
-
-        return $this;
-    }
-
-    /**
      * Determine if the given item exists.
      *
      * @param  mixed  $key
@@ -563,7 +491,7 @@ abstract class AbstractPaginator implements Htmlable
      */
     public function __call($method, $parameters)
     {
-        return $this->getCollection()->$method(...$parameters);
+        return call_user_func_array([$this->getCollection(), $method], $parameters);
     }
 
     /**

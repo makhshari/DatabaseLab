@@ -2,7 +2,8 @@
 
 namespace Illuminate\Support;
 
-use Illuminate\Console\Application as Artisan;
+use BadMethodCallException;
+use Illuminate\Console\Events\ArtisanStarting;
 
 abstract class ServiceProvider
 {
@@ -46,6 +47,13 @@ abstract class ServiceProvider
     }
 
     /**
+     * Register the service provider.
+     *
+     * @return void
+     */
+    abstract public function register();
+
+    /**
      * Merge the given configuration with the existing configuration.
      *
      * @param  string  $path
@@ -60,19 +68,6 @@ abstract class ServiceProvider
     }
 
     /**
-     * Load the given routes file if routes are not already cached.
-     *
-     * @param  string  $path
-     * @return void
-     */
-    protected function loadRoutesFrom($path)
-    {
-        if (! $this->app->routesAreCached()) {
-            require $path;
-        }
-    }
-
-    /**
      * Register a view file namespace.
      *
      * @param  string  $path
@@ -81,7 +76,7 @@ abstract class ServiceProvider
      */
     protected function loadViewsFrom($path, $namespace)
     {
-        if (is_dir($appPath = $this->app->resourcePath().'/views/vendor/'.$namespace)) {
+        if (is_dir($appPath = $this->app->basePath().'/resources/views/vendor/'.$namespace)) {
             $this->app['view']->addNamespace($namespace, $appPath);
         }
 
@@ -101,21 +96,6 @@ abstract class ServiceProvider
     }
 
     /**
-     * Register a database migration path.
-     *
-     * @param  array|string  $paths
-     * @return void
-     */
-    protected function loadMigrationsFrom($paths)
-    {
-        $this->app->afterResolving('migrator', function ($migrator) use ($paths) {
-            foreach ((array) $paths as $path) {
-                $migrator->path($path);
-            }
-        });
-    }
-
-    /**
      * Register paths to be published by the publish command.
      *
      * @param  array  $paths
@@ -124,7 +104,7 @@ abstract class ServiceProvider
      */
     protected function publishes(array $paths, $group = null)
     {
-        $class = static::class;
+        $class = get_class($this);
 
         if (! array_key_exists($class, static::$publishes)) {
             static::$publishes[$class] = [];
@@ -155,7 +135,7 @@ abstract class ServiceProvider
                 return [];
             }
 
-            return array_intersect_key(static::$publishes[$provider], static::$publishGroups[$group]);
+            return array_intersect(static::$publishes[$provider], static::$publishGroups[$group]);
         }
 
         if ($group && array_key_exists($group, static::$publishGroups)) {
@@ -189,8 +169,13 @@ abstract class ServiceProvider
     {
         $commands = is_array($commands) ? $commands : func_get_args();
 
-        Artisan::starting(function ($artisan) use ($commands) {
-            $artisan->resolveCommands($commands);
+        // To register the commands with Artisan, we will grab each of the arguments
+        // passed into the method and listen for Artisan "start" event which will
+        // give us the Artisan console instance which we will give commands to.
+        $events = $this->app['events'];
+
+        $events->listen(ArtisanStarting::class, function ($event) use ($commands) {
+            $event->artisan->resolveCommands($commands);
         });
     }
 
@@ -232,5 +217,23 @@ abstract class ServiceProvider
     public static function compiles()
     {
         return [];
+    }
+
+    /**
+     * Dynamically handle missing method calls.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     *
+     * @throws \BadMethodCallException
+     */
+    public function __call($method, $parameters)
+    {
+        if ($method == 'boot') {
+            return;
+        }
+
+        throw new BadMethodCallException("Call to undefined method [{$method}]");
     }
 }

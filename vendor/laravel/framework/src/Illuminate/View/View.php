@@ -9,8 +9,8 @@ use BadMethodCallException;
 use Illuminate\Support\Str;
 use Illuminate\Support\MessageBag;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\View\Engines\EngineInterface;
+use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Contracts\Support\MessageProvider;
 use Illuminate\Contracts\View\View as ViewContract;
 
@@ -58,7 +58,7 @@ class View implements ArrayAccess, ViewContract
      * @param  \Illuminate\View\Engines\EngineInterface  $engine
      * @param  string  $view
      * @param  string  $path
-     * @param  mixed  $data
+     * @param  array   $data
      * @return void
      */
     public function __construct(Factory $factory, EngineInterface $engine, $view, $path, $data = [])
@@ -76,8 +76,6 @@ class View implements ArrayAccess, ViewContract
      *
      * @param  callable|null  $callback
      * @return string
-     *
-     * @throws \Throwable
      */
     public function render(callable $callback = null)
     {

@@ -2,7 +2,6 @@
 
 namespace Illuminate\Console\Scheduling;
 
-use Illuminate\Container\Container;
 use Symfony\Component\Process\ProcessUtils;
 use Symfony\Component\Process\PhpExecutableFinder;
 
@@ -18,7 +17,7 @@ class Schedule
     /**
      * Add a new callback event to the schedule.
      *
-     * @param  string|callable  $callback
+     * @param  string  $callback
      * @param  array   $parameters
      * @return \Illuminate\Console\Scheduling\Event
      */
@@ -38,13 +37,17 @@ class Schedule
      */
     public function command($command, array $parameters = [])
     {
-        if (class_exists($command)) {
-            $command = Container::getInstance()->make($command)->getName();
-        }
-
         $binary = ProcessUtils::escapeArgument((new PhpExecutableFinder)->find(false));
 
-        $artisan = defined('ARTISAN_BINARY') ? ProcessUtils::escapeArgument(ARTISAN_BINARY) : 'artisan';
+        if (defined('HHVM_VERSION')) {
+            $binary .= ' --php';
+        }
+
+        if (defined('ARTISAN_BINARY')) {
+            $artisan = ProcessUtils::escapeArgument(ARTISAN_BINARY);
+        } else {
+            $artisan = 'artisan';
+        }
 
         return $this->exec("{$binary} {$artisan} {$command}", $parameters);
     }
@@ -76,15 +79,7 @@ class Schedule
     protected function compileParameters(array $parameters)
     {
         return collect($parameters)->map(function ($value, $key) {
-            if (is_array($value)) {
-                $value = collect($value)->map(function ($value) {
-                    return ProcessUtils::escapeArgument($value);
-                })->implode(' ');
-            } elseif (! is_numeric($value) && ! preg_match('/^(-.$|--.*)/i', $value)) {
-                $value = ProcessUtils::escapeArgument($value);
-            }
-
-            return is_numeric($key) ? $value : "{$key}={$value}";
+            return is_numeric($key) ? $value : $key.'='.(is_numeric($value) ? $value : ProcessUtils::escapeArgument($value));
         })->implode(' ');
     }
 

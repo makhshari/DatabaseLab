@@ -23,6 +23,7 @@ interface Application extends Container
     /**
      * Get or check the current application environment.
      *
+     * @param  mixed
      * @return string
      */
     public function environment();
@@ -91,7 +92,7 @@ interface Application extends Container
     public function getCachedCompilePath();
 
     /**
-     * Get the path to the cached services.php file.
+     * Get the path to the cached services.json file.
      *
      * @return string
      */

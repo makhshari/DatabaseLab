@@ -348,14 +348,12 @@ class ErrorHandler
     /**
      * Handles errors by filtering then logging them according to the configured bit fields.
      *
-     * @param int    $type      One of the E_* constants
-     * @param string $message
+     * @param int    $type    One of the E_* constants
      * @param string $file
      * @param int    $line
      * @param array  $context
-     * @param array  $backtrace
      *
-     * @return bool Returns false when no handling happens so that the PHP engine can handle the error itself
+     * @return bool Returns false when no handling happens so that the PHP engine can handle the error itself.
      *
      * @throws \ErrorException When $this->thrownErrors requests so
      *
@@ -370,10 +368,6 @@ class ErrorHandler
 
         if (!$type || (!$log && !$throw)) {
             return $type && $log;
-        }
-
-        if (isset($context['GLOBALS']) && ($this->scopedErrors & $type)) {
-            unset($context['GLOBALS']);
         }
 
         if (null !== $backtrace && $type & E_ERROR) {
@@ -500,7 +494,7 @@ class ErrorHandler
         }
         $type = $exception instanceof FatalErrorException ? $exception->getSeverity() : E_ERROR;
 
-        if (($this->loggedErrors & $type) || $exception instanceof FatalThrowableError) {
+        if ($this->loggedErrors & $type) {
             $e = array(
                 'type' => $type,
                 'file' => $exception->getFile(),
@@ -527,12 +521,8 @@ class ErrorHandler
             } else {
                 $message = 'Uncaught Exception: '.$exception->getMessage();
             }
-        }
-        if ($this->loggedErrors & $type) {
-            try {
-                $this->loggers[$type][0]->log($this->loggers[$type][1], $message, $e);
-            } catch (\Exception $handlerException) {
-            } catch (\Throwable $handlerException) {
+            if ($this->loggedErrors & $e['type']) {
+                $this->loggers[$e['type']][0]->log($this->loggers[$e['type']][1], $message, $e);
             }
         }
         if ($exception instanceof FatalErrorException && !$exception instanceof OutOfMemoryException && $error) {
@@ -589,8 +579,6 @@ class ErrorHandler
                 static::unstackErrors();
             }
         } catch (\Exception $exception) {
-            // Handled below
-        } catch (\Throwable $exception) {
             // Handled below
         }
 

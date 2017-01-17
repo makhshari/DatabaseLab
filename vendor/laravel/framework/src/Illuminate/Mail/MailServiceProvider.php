@@ -21,9 +21,9 @@ class MailServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->registerSwiftMailer();
-
         $this->app->singleton('mailer', function ($app) {
+            $this->registerSwiftMailer();
+
             // Once we have create the mailer instance, we will set a container instance
             // on the mailer. This allows us to resolve mailer classes via containers
             // for maximum testability on said classes instead of passing Closures.
@@ -48,15 +48,6 @@ class MailServiceProvider extends ServiceProvider
                 $mailer->alwaysTo($to['address'], $to['name']);
             }
 
-            // If a "reply to" address is set, we will set it on the mailer so that each
-            // message sent by the application will utilize the same address for this
-            // setting. This is more convenient than specifying it on each message.
-            $replyTo = $app['config']['mail.reply_to'];
-
-            if (is_array($replyTo) && isset($replyTo['address'])) {
-                $mailer->alwaysReplyTo($replyTo['address'], $replyTo['name']);
-            }
-
             return $mailer;
         });
     }
@@ -73,7 +64,7 @@ class MailServiceProvider extends ServiceProvider
         $mailer->setContainer($app);
 
         if ($app->bound('queue')) {
-            $mailer->setQueue($app['queue']);
+            $mailer->setQueue($app['queue.connection']);
         }
     }
 

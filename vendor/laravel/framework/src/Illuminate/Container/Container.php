@@ -4,7 +4,6 @@ namespace Illuminate\Container;
 
 use Closure;
 use ArrayAccess;
-use LogicException;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionFunction;
@@ -100,7 +99,7 @@ class Container implements ArrayAccess, ContainerContract
     protected $globalAfterResolvingCallbacks = [];
 
     /**
-     * All of the resolving callbacks by class type.
+     * All of the after resolving callbacks by class type.
      *
      * @var array
      */
@@ -191,8 +190,8 @@ class Container implements ArrayAccess, ContainerContract
         }
 
         // If no concrete type was given, we will simply set the concrete type to the
-        // abstract type. After that, the concrete type to be registered as shared
-        // without being forced to state their classes in both of the parameters.
+        // abstract type. This will allow concrete type to be registered as shared
+        // without being forced to state their classes in both of the parameter.
         $this->dropStaleInstances($abstract);
 
         if (is_null($concrete)) {
@@ -225,10 +224,10 @@ class Container implements ArrayAccess, ContainerContract
      */
     protected function getClosure($abstract, $concrete)
     {
-        return function ($container, $parameters = []) use ($abstract, $concrete) {
+        return function ($c, $parameters = []) use ($abstract, $concrete) {
             $method = ($abstract == $concrete) ? 'build' : 'make';
 
-            return $container->$method($concrete, $parameters);
+            return $c->$method($concrete, $parameters);
         };
     }
 
@@ -516,7 +515,11 @@ class Container implements ArrayAccess, ContainerContract
      */
     protected function isCallableWithAtSign($callback)
     {
-        return is_string($callback) && strpos($callback, '@') !== false;
+        if (! is_string($callback)) {
+            return false;
+        }
+
+        return strpos($callback, '@') !== false;
     }
 
     /**
@@ -601,20 +604,6 @@ class Container implements ArrayAccess, ContainerContract
         }
 
         return $this->call([$this->make($segments[0]), $method], $parameters);
-    }
-
-    /**
-     * Get a closure to resolve the given type from the container.
-     *
-     * @param  string  $abstract
-     * @param  array  $defaults
-     * @return \Closure
-     */
-    public function factory($abstract, array $defaults = [])
-    {
-        return function (array $params = []) use ($abstract, $defaults) {
-            return $this->make($abstract, $params + $defaults);
-        };
     }
 
     /**
@@ -905,7 +894,7 @@ class Container implements ArrayAccess, ContainerContract
      */
     public function resolving($abstract, Closure $callback = null)
     {
-        if (is_null($callback) && $abstract instanceof Closure) {
+        if ($callback === null && $abstract instanceof Closure) {
             $this->resolvingCallback($abstract);
         } else {
             $this->resolvingCallbacks[$this->normalize($abstract)][] = $callback;
@@ -921,7 +910,7 @@ class Container implements ArrayAccess, ContainerContract
      */
     public function afterResolving($abstract, Closure $callback = null)
     {
-        if ($abstract instanceof Closure && is_null($callback)) {
+        if ($abstract instanceof Closure && $callback === null) {
             $this->afterResolvingCallback($abstract);
         } else {
             $this->afterResolvingCallbacks[$this->normalize($abstract)][] = $callback;
@@ -1085,20 +1074,10 @@ class Container implements ArrayAccess, ContainerContract
      *
      * @param  string  $abstract
      * @return string
-     *
-     * @throws \LogicException
      */
-    public function getAlias($abstract)
+    protected function getAlias($abstract)
     {
-        if (! isset($this->aliases[$abstract])) {
-            return $abstract;
-        }
-
-        if ($this->aliases[$abstract] === $abstract) {
-            throw new LogicException("[{$abstract}] is aliased to itself.");
-        }
-
-        return $this->getAlias($this->aliases[$abstract]);
+        return isset($this->aliases[$abstract]) ? $this->aliases[$abstract] : $abstract;
     }
 
     /**
@@ -1163,22 +1142,18 @@ class Container implements ArrayAccess, ContainerContract
      */
     public static function getInstance()
     {
-        if (is_null(static::$instance)) {
-            static::$instance = new static;
-        }
-
         return static::$instance;
     }
 
     /**
      * Set the shared instance of the container.
      *
-     * @param  \Illuminate\Contracts\Container\Container|null  $container
-     * @return static
+     * @param  \Illuminate\Contracts\Container\Container  $container
+     * @return void
      */
-    public static function setInstance(ContainerContract $container = null)
+    public static function setInstance(ContainerContract $container)
     {
-        return static::$instance = $container;
+        static::$instance = $container;
     }
 
     /**
@@ -1189,7 +1164,7 @@ class Container implements ArrayAccess, ContainerContract
      */
     public function offsetExists($key)
     {
-        return $this->bound($key);
+        return isset($this->bindings[$this->normalize($key)]);
     }
 
     /**

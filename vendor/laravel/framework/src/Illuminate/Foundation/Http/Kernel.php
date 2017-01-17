@@ -7,8 +7,8 @@ use Throwable;
 use Illuminate\Routing\Router;
 use Illuminate\Routing\Pipeline;
 use Illuminate\Support\Facades\Facade;
-use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Http\Kernel as KernelContract;
 use Symfony\Component\Debug\Exception\FatalThrowableError;
 
@@ -65,22 +65,6 @@ class Kernel implements KernelContract
     protected $routeMiddleware = [];
 
     /**
-     * The priority-sorted list of middleware.
-     *
-     * Forces the listed middleware to always be in the given order.
-     *
-     * @var array
-     */
-    protected $middlewarePriority = [
-        \Illuminate\Session\Middleware\StartSession::class,
-        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-        \Illuminate\Auth\Middleware\Authenticate::class,
-        \Illuminate\Session\Middleware\AuthenticateSession::class,
-        \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        \Illuminate\Auth\Middleware\Authorize::class,
-    ];
-
-    /**
      * Create a new HTTP kernel instance.
      *
      * @param  \Illuminate\Contracts\Foundation\Application  $app
@@ -91,8 +75,6 @@ class Kernel implements KernelContract
     {
         $this->app = $app;
         $this->router = $router;
-
-        $router->middlewarePriority = $this->middlewarePriority;
 
         foreach ($this->middlewareGroups as $key => $middleware) {
             $router->middlewareGroup($key, $middleware);
@@ -160,15 +142,11 @@ class Kernel implements KernelContract
     public function terminate($request, $response)
     {
         $middlewares = $this->app->shouldSkipMiddleware() ? [] : array_merge(
-            $this->gatherRouteMiddleware($request),
+            $this->gatherRouteMiddlewares($request),
             $this->middleware
         );
 
         foreach ($middlewares as $middleware) {
-            if (! is_string($middleware)) {
-                continue;
-            }
-
             list($name, $parameters) = $this->parseMiddleware($middleware);
 
             $instance = $this->app->make($name);
@@ -187,10 +165,10 @@ class Kernel implements KernelContract
      * @param  \Illuminate\Http\Request  $request
      * @return array
      */
-    protected function gatherRouteMiddleware($request)
+    protected function gatherRouteMiddlewares($request)
     {
         if ($route = $request->route()) {
-            return $this->router->gatherRouteMiddleware($route);
+            return $this->router->gatherRouteMiddlewares($route);
         }
 
         return [];
@@ -238,6 +216,42 @@ class Kernel implements KernelContract
     {
         if (array_search($middleware, $this->middleware) === false) {
             $this->middleware[] = $middleware;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add a middleware to the beginning of a middleware group.
+     *
+     * If the middleware is already in the group, it will not be added again.
+     *
+     * @param  string  $group
+     * @param  string  $middleware
+     * @return $this
+     */
+    public function prependMiddlewareToGroup($group, $middleware)
+    {
+        if (isset($this->middlewareGroups[$group]) && ! in_array($middleware, $this->middlewareGroups[$group])) {
+            array_unshift($this->middlewareGroups[$group], $middleware);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add a middleware to the end of a middleware group.
+     *
+     * If the middleware is already in the group, it will not be added again.
+     *
+     * @param  string  $group
+     * @param  string  $middleware
+     * @return $this
+     */
+    public function pushMiddlewareToGroup($group, $middleware)
+    {
+        if (isset($this->middlewareGroups[$group]) && ! in_array($middleware, $this->middlewareGroups[$group])) {
+            $this->middlewareGroups[$group][] = $middleware;
         }
 
         return $this;

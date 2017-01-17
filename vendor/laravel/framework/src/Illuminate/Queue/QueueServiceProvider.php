@@ -2,6 +2,7 @@
 
 namespace Illuminate\Queue;
 
+use IlluminateQueueClosure;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Queue\Console\WorkCommand;
 use Illuminate\Queue\Console\ListenCommand;
@@ -10,8 +11,8 @@ use Illuminate\Queue\Connectors\SqsConnector;
 use Illuminate\Queue\Connectors\NullConnector;
 use Illuminate\Queue\Connectors\SyncConnector;
 use Illuminate\Queue\Connectors\RedisConnector;
-use Illuminate\Queue\Connectors\DatabaseConnector;
 use Illuminate\Queue\Failed\NullFailedJobProvider;
+use Illuminate\Queue\Connectors\DatabaseConnector;
 use Illuminate\Queue\Connectors\BeanstalkdConnector;
 use Illuminate\Queue\Failed\DatabaseFailedJobProvider;
 
@@ -38,6 +39,8 @@ class QueueServiceProvider extends ServiceProvider
         $this->registerListener();
 
         $this->registerFailedJobServices();
+
+        $this->registerQueueClosure();
     }
 
     /**
@@ -75,10 +78,7 @@ class QueueServiceProvider extends ServiceProvider
         $this->registerRestartCommand();
 
         $this->app->singleton('queue.worker', function ($app) {
-            return new Worker(
-                $app['queue'], $app['events'],
-                $app['Illuminate\Contracts\Debug\ExceptionHandler']
-            );
+            return new Worker($app['queue'], $app['queue.failer'], $app['events']);
         });
     }
 
@@ -246,6 +246,18 @@ class QueueServiceProvider extends ServiceProvider
             } else {
                 return new NullFailedJobProvider;
             }
+        });
+    }
+
+    /**
+     * Register the Illuminate queued closure job.
+     *
+     * @return void
+     */
+    protected function registerQueueClosure()
+    {
+        $this->app->singleton('IlluminateQueueClosure', function ($app) {
+            return new IlluminateQueueClosure($app['encrypter']);
         });
     }
 
