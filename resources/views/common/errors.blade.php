@@ -11,8 +11,4 @@
             @endforeach
         </ul>
     </div>
-<<<<<<< HEAD
 @endif
-=======
-@endif
->>>>>>> 27ec49379f8115f342fba397bfdb04ea49935531

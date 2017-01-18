@@ -61,13 +61,21 @@
                                     <tr>
                                         <td class="table-text "><strong>{{ $task->name }}</strong></td>
                                         @if($task->description!="")
-                                        <td class="table-text"><div>{{ $task->description }}</div>
-                                            <button class="btn btn-primary btn-xs btn-update btn-add-card" id="updatebtn">Update</button>
+                                        <td class="table-text">
+                                            {{--<div>{{ $task->description }}</div>--}}
+
+                                            <form action="{{url('updesc/' . $task->id)}}" method="POST">
+                                                {{ csrf_field() }}
+                                                <input type="text" name="description"  class="form-control" value='{{ $task->description }}' >
+                                                <button  type="submit" id="update-description-{{ $task->id }}" class="btn btn-warning btn-xs btn-update ">Update description</button>
+                                            </form>
+
+
                                             <form action="{{url('nulldesc/' . $task->id)}}" method="POST">
                                                 {{ csrf_field() }}
                                                 {{ method_field('DELETE') }}
 
-                                                <button type="submit" id="delete-description-{{ $task->id }}" class="btn btn-danger btn-xs btn-update btn-add-card">Delete description</button>
+                                                <button type="submit" id="delete-description-{{ $task->id }}" class="btn btn-danger btn-xs btn-update ">Delete description</button>
                                             </form>
 
                                         </td>

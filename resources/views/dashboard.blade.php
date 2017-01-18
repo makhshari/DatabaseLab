@@ -54,22 +54,13 @@
                             <p>4111xxxxx xxx3265</p>
                             <p >Exp: 12-08</p>
                         </div>
-<<<<<<< HEAD
                         <button class="btn btn-primary btn-xs btn-update btn-add-card" id="updatebtn">Update</button>
                         <button  class="btn btn-success btn-xs btn-update btn-add-card" id="verifybtn">Vrify Now</button>
-=======
-                        <button type="button" class="btn btn-primary btn-xs btn-update btn-add-card" id="updatebtn">Update</button>
-                        <button type="button" class="btn btn-success btn-xs btn-update btn-add-card" id="verifybtn">Vrify Now</button>
->>>>>>> 27ec49379f8115f342fba397bfdb04ea49935531
                         <form action="/task/{{ $task->id }}" method="POST">
                             {{ csrf_field() }}
                             {{ method_field('DELETE') }}
 
-<<<<<<< HEAD
                             <button class="btn btn-danger btn-xs btn-update btn-add-card" id="deletebtn">Delete Task</button>
-=======
-                            <button type="button" class="btn btn-danger btn-xs btn-update btn-add-card" id="deletebtn">Delete Task</button>
->>>>>>> 27ec49379f8115f342fba397bfdb04ea49935531
                         </form>
 
                         <span class='glyphicon glyphicon-exclamation-sign text-danger pull-right icon-style'></span>

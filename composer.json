@@ -5,14 +5,8 @@
     "license": "MIT",
     "type": "project",
     "require": {
-<<<<<<< HEAD
         "php": ">=5.5.9",
         "laravel/framework": "5.2.*"
-=======
-        "php": ">=5.6.4",
-        "laravel/framework": "5.3.*",
-        "barryvdh/laravel-ide-helper": "^2.2"
->>>>>>> 27ec49379f8115f342fba397bfdb04ea49935531
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",

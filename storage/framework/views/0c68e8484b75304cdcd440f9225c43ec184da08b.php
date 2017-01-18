@@ -60,15 +60,24 @@
                                     <tr>
                                         <td class="table-text "><strong><?php echo e($task->name); ?></strong></td>
                                         <?php if($task->description!=""): ?>
-                                        <td class="table-text"><div><?php echo e($task->description); ?></div>
-                                            <button class="btn btn-primary btn-xs btn-update btn-add-card" id="updatebtn">Update</button>
+                                        <td class="table-text">
+                                            <?php /*<div><?php echo e($task->description); ?></div>*/ ?>
+
+                                            <form action="<?php echo e(url('updesc/' . $task->id)); ?>" method="POST">
+                                                <?php echo e(csrf_field()); ?>
+
+                                                <input type="text" name="description"  class="form-control" value='<?php echo e($task->description); ?>' >
+                                                <button  type="submit" id="update-description-<?php echo e($task->id); ?>" class="btn btn-warning btn-xs btn-update ">Update description</button>
+                                            </form>
+
+
                                             <form action="<?php echo e(url('nulldesc/' . $task->id)); ?>" method="POST">
                                                 <?php echo e(csrf_field()); ?>
 
                                                 <?php echo e(method_field('DELETE')); ?>
 
 
-                                                <button type="submit" id="delete-description-<?php echo e($task->id); ?>" class="btn btn-danger btn-xs btn-update btn-add-card">Delete description</button>
+                                                <button type="submit" id="delete-description-<?php echo e($task->id); ?>" class="btn btn-danger btn-xs btn-update ">Delete description</button>
                                             </form>
 
                                         </td>

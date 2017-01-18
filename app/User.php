@@ -5,13 +5,6 @@ namespace App;
 use App\Task;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-/**
- * App\User
- *
- * @property-read \Illuminate\Database\Eloquent\Collection|\App\Task[] $tasks
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection|\Illuminate\Notifications\DatabaseNotification[] $notifications
- * @mixin \Eloquent
- */
 class User extends Authenticatable
 {
     /**

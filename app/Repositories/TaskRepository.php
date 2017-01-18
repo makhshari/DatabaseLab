@@ -16,14 +16,7 @@ class TaskRepository
     public function forUser(User $user)
     {
         return Task::where('user_id', $user->id)
-<<<<<<< HEAD
                     ->orderBy('created_at', 'asc')
                     ->get();
     }
 }
-=======
-            ->orderBy('created_at', 'asc')
-            ->get();
-    }
-}
->>>>>>> 27ec49379f8115f342fba397bfdb04ea49935531
