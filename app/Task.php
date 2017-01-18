@@ -12,7 +12,7 @@ class Task extends Model
      *
      * @var array
      */
-    protected $fillable = ['name','description','list'];
+    protected $fillable = ['name','description','list','board'];
     
     /**
      * The attributes that should be cast to native types.

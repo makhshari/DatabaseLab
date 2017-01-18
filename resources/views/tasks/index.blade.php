@@ -38,6 +38,13 @@
                                     <input type="text" name="list" id="task-list" class="form-control" value="{{ old('task') }}">
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label for="task-board" class="col-sm-3 control-label">board</label>
+
+                                <div class="col-sm-6">
+                                    <input type="text" name="board" id="task-board" class="form-control" value="{{ old('task') }}">
+                                </div>
+                            </div>
 
                         <!-- Add Task Button -->
                         <div class="form-group">
@@ -52,9 +59,14 @@
             </div>
 
             <!-- Current Tasks -->
-
+            @foreach($tasks->unique('board') as $boards)
+                <div class="panel panel-danger ">
+                    <div class="panel-heading">
+                        {{$boards->board}}
+                    </div>
             @foreach($tasks->unique('list') as $lists)
-                <div class="panel panel-default">
+                        @if($boards->board==$lists->board)
+                    <div class="panel panel-warning">
                     <div class="panel-heading">
                         {{$lists->list}}
                     </div>
@@ -109,7 +121,14 @@
                         </table>
                     </div>
                 </div>
+
+                @endif
+
+                    @endforeach
+                </div>
+
                 @endforeach
+        </div>
         </div>
     </div>
 @endsection

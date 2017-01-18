@@ -37,6 +37,13 @@
                                     <input type="text" name="list" id="task-list" class="form-control" value="<?php echo e(old('task')); ?>">
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label for="task-board" class="col-sm-3 control-label">board</label>
+
+                                <div class="col-sm-6">
+                                    <input type="text" name="board" id="task-board" class="form-control" value="<?php echo e(old('task')); ?>">
+                                </div>
+                            </div>
 
                         <!-- Add Task Button -->
                         <div class="form-group">
@@ -51,9 +58,15 @@
             </div>
 
             <!-- Current Tasks -->
+            <?php foreach($tasks->unique('board') as $boards): ?>
+                <div class="panel panel-danger ">
+                    <div class="panel-heading">
+                        <?php echo e($boards->board); ?>
 
+                    </div>
             <?php foreach($tasks->unique('list') as $lists): ?>
-                <div class="panel panel-default">
+                        <?php if($boards->board==$lists->board): ?>
+                    <div class="panel panel-warning">
                     <div class="panel-heading">
                         <?php echo e($lists->list); ?>
 
@@ -114,7 +127,14 @@
                         </table>
                     </div>
                 </div>
+
+                <?php endif; ?>
+
+                    <?php endforeach; ?>
+                </div>
+
                 <?php endforeach; ?>
+        </div>
         </div>
     </div>
 <?php $__env->stopSection(); ?>
