@@ -31,6 +31,13 @@
                                     <textarea type="text" name="description" id="task-description" class="form-control" value="{{ old('task') }}"></textarea>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label for="task-list" class="col-sm-3 control-label">List</label>
+
+                                <div class="col-sm-6">
+                                    <input type="text" name="list" id="task-list" class="form-control" value="{{ old('task') }}">
+                                </div>
+                            </div>
 
                         <!-- Add Task Button -->
                         <div class="form-group">
@@ -45,10 +52,11 @@
             </div>
 
             <!-- Current Tasks -->
-            @if (count($tasks) > 0)
+
+            @foreach($tasks->unique('list') as $lists)
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        Current Tasks
+                        {{$lists->list}}
                     </div>
 
                     <div class="panel-body">
@@ -58,6 +66,7 @@
                             </thead>
                             <tbody>
                                 @foreach ($tasks as $task)
+                                    @if ($task->list == $lists->list)
                                     <tr>
                                         <td class="table-text "><strong>{{ $task->name }}</strong></td>
                                         @if($task->description!="")
@@ -94,12 +103,13 @@
                                             </form>
                                         </td>
                                     </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
-            @endif
+                @endforeach
         </div>
     </div>
 @endsection

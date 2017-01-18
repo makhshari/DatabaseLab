@@ -30,6 +30,13 @@
                                     <textarea type="text" name="description" id="task-description" class="form-control" value="<?php echo e(old('task')); ?>"></textarea>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label for="task-list" class="col-sm-3 control-label">List</label>
+
+                                <div class="col-sm-6">
+                                    <input type="text" name="list" id="task-list" class="form-control" value="<?php echo e(old('task')); ?>">
+                                </div>
+                            </div>
 
                         <!-- Add Task Button -->
                         <div class="form-group">
@@ -44,10 +51,12 @@
             </div>
 
             <!-- Current Tasks -->
-            <?php if(count($tasks) > 0): ?>
+
+            <?php foreach($tasks->unique('list') as $lists): ?>
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        Current Tasks
+                        <?php echo e($lists->list); ?>
+
                     </div>
 
                     <div class="panel-body">
@@ -57,6 +66,7 @@
                             </thead>
                             <tbody>
                                 <?php foreach($tasks as $task): ?>
+                                    <?php if($task->list == $lists->list): ?>
                                     <tr>
                                         <td class="table-text "><strong><?php echo e($task->name); ?></strong></td>
                                         <?php if($task->description!=""): ?>
@@ -98,12 +108,13 @@
                                             </form>
                                         </td>
                                     </tr>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 </div>
-            <?php endif; ?>
+                <?php endforeach; ?>
         </div>
     </div>
 <?php $__env->stopSection(); ?>
