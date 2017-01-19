@@ -33,6 +33,9 @@ Route::group(['middleware' => ['web']], function () {
     Route::delete('/task/{task}', 'TaskController@destroy');
     Route::delete('/nulldesc/{task}', 'TaskController@nulldesc');
     Route::post('/updesc/{task}', 'TaskController@updesc');
+    Route::post('/uprank/{task}', 'TaskController@uprank');
+    Route::post('/uplist/{task}', 'TaskController@uplist');
+    Route::post('/uplistrank/{task}', 'TaskController@uplistrank');
 
     Route::auth();
 

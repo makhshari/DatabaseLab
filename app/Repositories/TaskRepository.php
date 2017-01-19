@@ -15,8 +15,13 @@ class TaskRepository
      */
     public function forUser(User $user)
     {
-        return Task::where('user_id', $user->id)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+            return    Task::where('user_id', $user->id)
+                    ->orderBy('listrank', 'asc')
+                    ->orderBy('rank', 'asc')
+                    ->get() ;
+
+//          return Task::where('user_id', $user->id)
+//              ->orderBy('rank', 'asc')
+//              ->get() ;
     }
 }
